@@ -1,0 +1,6 @@
+{
+  "name": "Phone Directory Search",
+  "description": "ระบบค้นหาเบอร์โทรศัพท์และแผนกจาก Google Sheet พร้อมผู้ช่วยค้นหาด้วย AI",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
