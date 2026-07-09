@@ -17,7 +17,10 @@ import {
   ArrowRight,
   ExternalLink,
   ChevronRight,
-  UserCheck
+  UserCheck,
+  Mail,
+  MapPin,
+  X
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -70,6 +73,9 @@ export default function App() {
 
   // Copy State
   const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  // Modal Detail State
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -496,7 +502,8 @@ export default function App() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95 }}
                           transition={{ duration: 0.15, delay: Math.min(index * 0.015, 0.15) }}
-                          className={`bg-white border border-slate-200 p-4 rounded-xl flex flex-col justify-between hover:shadow-md transition-shadow duration-200 group ${
+                          onClick={() => setSelectedContact(contact)}
+                          className={`bg-white border border-slate-200 p-4 rounded-xl flex flex-col justify-between hover:shadow-md hover:border-blue-200 hover:bg-slate-50/30 transition-all duration-200 cursor-pointer group ${
                             aiActiveFilter?.includes(contact.id) ? "ring-2 ring-blue-500 bg-blue-50/10" : ""
                           }`}
                         >
@@ -520,11 +527,11 @@ export default function App() {
 
                             {/* Info Container */}
                             <div className="flex items-center gap-3">
-                              <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 font-bold text-sm ${avatarBg}`}>
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 font-bold text-sm transition-transform group-hover:scale-105 duration-200 ${avatarBg}`}>
                                 {hasName ? contact.name.trim().substring(0, 2) : "พน"}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <h3 className={`text-sm font-bold truncate text-slate-900`}>
+                                <h3 className={`text-sm font-bold truncate text-slate-900 group-hover:text-blue-600 transition-colors`}>
                                   {searchTerm ? highlightText(displayName, searchTerm) : displayName}
                                 </h3>
                                 <p className="text-xs text-slate-500 truncate mt-0.5">
@@ -553,7 +560,10 @@ export default function App() {
                             {/* Quick Actions */}
                             <div className="flex gap-1.5">
                               <button
-                                onClick={() => handleCopyPhone(contact)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCopyPhone(contact);
+                                }}
                                 title="คัดลอกเบอร์โทรศัพท์"
                                 className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                                   isCopied 
@@ -565,6 +575,7 @@ export default function App() {
                               </button>
                               <a
                                 href={`tel:${contact.phone}`}
+                                onClick={(e) => e.stopPropagation()}
                                 title="โทรออกโดยตรง"
                                 className="p-1.5 bg-blue-50 border border-blue-100/50 hover:bg-blue-100 text-blue-600 rounded-lg transition-all"
                               >
@@ -746,6 +757,263 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Employee Expanded Details Modal */}
+      <AnimatePresence>
+        {selectedContact && (() => {
+          const hasName = selectedContact.name.trim() !== "";
+          const displayName = hasName ? selectedContact.name : `พนักงานลำดับที่ ${selectedContact.id}`;
+          
+          // Get reporting manager
+          const manager = selectedContact.department ? contacts.find(c => 
+            c.department === selectedContact.department && 
+            c.id !== selectedContact.id &&
+            (c.position.includes("หัวหน้า") || c.position.includes("ผู้จัดการ") || c.position.includes("บริหาร") || c.position.includes("วิเคราะห์"))
+          ) : null;
+
+          // Office Location mapping
+          let officeLocation = "อาคารสำนักงานใหญ่ ชั้น 1 (Main Headquarter)";
+          if (selectedContact.department === "IT") officeLocation = "อาคาร A ชั้น 4 ห้องปฏิบัติการสนับสนุน (IT Support Room)";
+          else if (selectedContact.department === "บุคคล") officeLocation = "อาคาร A ชั้น 2 สำนักงานทรัพยากรบุคคล (HR Office)";
+          else if (selectedContact.department === "การเงิน") officeLocation = "อาคาร B ชั้น 3 ฝ่ายบัญชีและการเงิน (Accounting & Finance Dept)";
+          else if (selectedContact.department === "วิศวกรรม") officeLocation = "อาคาร C ชั้น 2 ห้องวิจัยและพัฒนาวิศวกรรม (Engineering Lab)";
+          else if (selectedContact.department === "ปฏิบัติการ") officeLocation = "อาคาร C ชั้น 1 แผนกปฏิบัติการทั่วไป (Operations Site)";
+
+          // Email Generator
+          const emailAddress = `emp.${selectedContact.id}@directorypro.co.th`;
+
+          // Department theme coloring
+          let themeColor = "from-blue-600 to-indigo-600 text-blue-600 bg-blue-50 border-blue-100";
+          let avatarTheme = "bg-blue-100 text-blue-700";
+          if (selectedContact.department === "IT") {
+            themeColor = "from-cyan-600 to-teal-600 text-cyan-700 bg-cyan-50 border-cyan-100";
+            avatarTheme = "bg-cyan-100 text-cyan-800";
+          } else if (selectedContact.department === "บุคคล") {
+            themeColor = "from-rose-500 to-pink-600 text-rose-700 bg-rose-50 border-rose-100";
+            avatarTheme = "bg-rose-100 text-rose-800";
+          } else if (selectedContact.department === "การเงิน") {
+            themeColor = "from-amber-500 to-orange-600 text-amber-700 bg-amber-50 border-amber-100";
+            avatarTheme = "bg-amber-100 text-amber-800";
+          } else if (selectedContact.department === "วิศวกรรม") {
+            themeColor = "from-indigo-600 to-violet-600 text-indigo-700 bg-indigo-50 border-indigo-100";
+            avatarTheme = "bg-indigo-100 text-indigo-800";
+          } else if (selectedContact.department === "ปฏิบัติการ") {
+            themeColor = "from-emerald-600 to-teal-600 text-emerald-700 bg-emerald-50 border-emerald-100";
+            avatarTheme = "bg-emerald-100 text-emerald-800";
+          }
+
+          const handleCopyFullInfo = () => {
+            const text = `รายชื่อบุคลากร: ${selectedContact.name || 'ไม่ระบุชื่อ'}
+ตำแหน่ง: ${selectedContact.position || 'ไม่ระบุ'}
+ฝ่ายงาน: ${selectedContact.department || 'ไม่ระบุ'}
+เบอร์โทรศัพท์: ${selectedContact.phone || 'ไม่มีข้อมูล'} (Ext. ${selectedContact.id})
+อีเมลบริษัท: ${emailAddress}
+สถานที่ปฏิบัติงาน: ${officeLocation}
+ผู้บังคับบัญชาสายตรง: ${manager ? `${manager.name} (${manager.position})` : 'ไม่มีข้อมูลหัวหน้าสายงานโดยตรง'}`;
+
+            navigator.clipboard.writeText(text);
+            const originalId = selectedContact.id;
+            setCopiedId(originalId);
+            setTimeout(() => setCopiedId(null), 2000);
+          };
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              {/* Overlay Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedContact(null)}
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+              />
+
+              {/* Modal Box */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 16 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 16 }}
+                transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
+                className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100 z-10 flex flex-col"
+              >
+                {/* Decorative Colorful Banner Header */}
+                <div className={`h-24 bg-gradient-to-r ${themeColor.split(" ")[0]} ${themeColor.split(" ")[1]} relative flex items-end p-4`}>
+                  <button
+                    onClick={() => setSelectedContact(null)}
+                    className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/10 hover:bg-black/20 p-1.5 rounded-full transition-all cursor-pointer"
+                    title="ปิดหน้าต่าง"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Main Content Area */}
+                <div className="px-6 pb-6 pt-12 relative flex-1">
+                  {/* Floating Large Avatar */}
+                  <div className="absolute -top-12 left-6">
+                    <div className={`w-24 h-24 rounded-2xl shadow-md border-4 border-white flex items-center justify-center font-bold text-2xl tracking-wide ${avatarTheme}`}>
+                      {hasName ? selectedContact.name.trim().substring(0, 2) : "พน"}
+                    </div>
+                  </div>
+
+                  {/* Header Names */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl font-bold text-slate-950">{displayName}</h2>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${themeColor.split(" ").slice(2).join(" ")}`}>
+                        ฝ่าย{selectedContact.department}
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                        Ext. {selectedContact.id}
+                      </span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-500">{selectedContact.position}</p>
+                  </div>
+
+                  {/* Info Divider */}
+                  <div className="h-px bg-slate-100 my-5"></div>
+
+                  {/* Fields Block */}
+                  <div className="space-y-4">
+                    {/* Phone Number Row */}
+                    <div className="flex items-start gap-3 group/row">
+                      <div className="bg-blue-50 text-blue-600 p-2 rounded-lg mt-0.5">
+                        <Phone className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">เบอร์โทรศัพท์ติดต่อ</span>
+                        <span className="text-sm font-mono font-bold text-slate-800">
+                          {selectedContact.phone ? (
+                            selectedContact.phone.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3")
+                          ) : (
+                            "ไม่มีข้อมูลเบอร์"
+                          )}
+                        </span>
+                      </div>
+                      {selectedContact.phone && (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(selectedContact.phone);
+                              setCopiedId(9999); // temporary custom copy visual flag
+                              setTimeout(() => setCopiedId(null), 1500);
+                            }}
+                            className="p-1.5 hover:bg-slate-100 rounded-md text-slate-400 hover:text-slate-600 transition-colors"
+                            title="คัดลอกเบอร์โทร"
+                          >
+                            {copiedId === 9999 ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                          </button>
+                          <a
+                            href={`tel:${selectedContact.phone}`}
+                            className="p-1.5 hover:bg-blue-50 rounded-md text-blue-600 transition-colors"
+                            title="โทรออก"
+                          >
+                            <Phone className="h-3.5 w-3.5" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Email Row */}
+                    <div className="flex items-start gap-3 group/row">
+                      <div className="bg-cyan-50 text-cyan-600 p-2 rounded-lg mt-0.5">
+                        <Mail className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">อีเมลบริษัท (Corporate Email)</span>
+                        <span className="text-sm font-semibold text-slate-800 block truncate">{emailAddress}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(emailAddress);
+                            setCopiedId(8888); // custom copy visual flag
+                            setTimeout(() => setCopiedId(null), 1500);
+                          }}
+                          className="p-1.5 hover:bg-slate-100 rounded-md text-slate-400 hover:text-slate-600 transition-colors"
+                          title="คัดลอกอีเมล"
+                        >
+                          {copiedId === 8888 ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                        </button>
+                        <a
+                          href={`mailto:${emailAddress}`}
+                          className="p-1.5 hover:bg-cyan-50 rounded-md text-cyan-600 transition-colors"
+                          title="ส่งอีเมล"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Work Location Row */}
+                    <div className="flex items-start gap-3">
+                      <div className="bg-emerald-50 text-emerald-600 p-2 rounded-lg mt-0.5">
+                        <MapPin className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">สถานที่ปฏิบัติงาน (Office Location)</span>
+                        <span className="text-xs font-semibold text-slate-700 leading-relaxed block">{officeLocation}</span>
+                      </div>
+                    </div>
+
+                    {/* Reporting Manager Row */}
+                    <div className="flex items-start gap-3">
+                      <div className="bg-indigo-50 text-indigo-600 p-2 rounded-lg mt-0.5">
+                        <UserCheck className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">ผู้บังคับบัญชาสายตรง (Reporting Manager)</span>
+                        {manager ? (
+                          <div 
+                            onClick={() => setSelectedContact(manager)}
+                            className="group/mgr mt-1 bg-slate-50 hover:bg-indigo-50/50 border border-slate-200 hover:border-indigo-100 p-2.5 rounded-xl cursor-pointer transition-all flex items-center justify-between"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <span className="text-xs font-bold text-slate-800 block truncate group-hover/mgr:text-indigo-600 transition-colors">{manager.name}</span>
+                              <span className="text-[10px] text-slate-400 font-medium block">{manager.position}</span>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-slate-400 group-hover/mgr:text-indigo-600 group-hover/mgr:translate-x-0.5 transition-all shrink-0" />
+                          </div>
+                        ) : (
+                          <span className="text-xs font-semibold text-slate-400 italic block mt-0.5">
+                            ไม่มีข้อมูลหัวหน้าสายงานในแผนกโดยตรง
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions Area */}
+                  <div className="mt-8 pt-5 border-t border-slate-100 flex gap-2">
+                    <button
+                      onClick={handleCopyFullInfo}
+                      className="flex-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      {copiedId === selectedContact.id ? (
+                        <>
+                          <Check className="h-4 w-4 text-emerald-400 animate-bounce" />
+                          <span>คัดลอกข้อมูลพนักงานสำเร็จ!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          <span>คัดลอกข้อมูลบุคลากรทั้งหมด</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setSelectedContact(null)}
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 px-5 rounded-xl border border-slate-200 transition-all cursor-pointer"
+                    >
+                      ปิด
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 }
